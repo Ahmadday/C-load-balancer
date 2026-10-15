@@ -5,9 +5,9 @@ fleet of backend servers, comparing five real-world load balancing
 algorithms under identical traffic conditions.
 
 Each backend server runs on its own real thread with its own request queue
-(mutex + condition variable), so this isn't a discrete-event simulation —
+(mutex + condition variable).
 it's an actual concurrent system, just with simulated network/processing
-costs (`std::this_thread::sleep_for`) instead of real sockets.
+costs with thread sleeps instead of real sockets.
 
 ## Algorithms implemented
 
@@ -49,20 +49,47 @@ have different speed multipliers (`1.0, 1.0, 2.0, 0.5, 1.5`) simulating
 different hardware capacity. Every strategy runs against the *exact same*
 generated traffic (fixed random seed) so results are directly comparable.
 
-## Build & run
+## Prerequisites
+
+This project requires a modern C++17 toolchain. The code uses `std::thread`, `std::mutex`, atomic operations, and structured bindings, so an older GCC/MinGW install will not work.
+
+### Windows (recommended: MSYS2 + MinGW64)
+
+Open the `MSYS2 MINGW64` shell and install the toolchain:
+
+```bash
+pacman -S --needed mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-cmake
+```
+
+Then build from the project root:
+
+```bash
+cd /c/Users/12675/Downloads/loadbalancer-sim/loadbalancer-sim
+cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=/mingw64/bin/g++.exe
+cmake --build build
+```
+
+### Linux / macOS
 
 ```bash
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j4
-./lbsim [totalRequestsPerStrategy] [arrivalRatePerSec] [--live]
+```
+
+## Run
+
+```bash
+./build/lbsim [totalRequestsPerStrategy] [arrivalRatePerSec] [--live]
 
 # e.g. 3000 requests per strategy at 150 req/s
-./lbsim 3000 150
+./build/lbsim 3000 150
 
 # with a live terminal dashboard (recommended - watch the herd effect happen)
-./lbsim 2000 150 --live
+./build/lbsim 2000 150 --live
 ```
+
+On Windows, the executable will be generated under `build/lbsim.exe`.
 
 Prints a comparison table to stdout and writes `results.csv` (in whatever
 directory you ran it from) for further analysis or plotting.

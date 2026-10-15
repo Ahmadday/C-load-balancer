@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <string>
 
 LiveDashboard::LiveDashboard(const std::vector<std::shared_ptr<Server>>& servers,
                               Metrics& metrics,
@@ -13,10 +14,11 @@ LiveDashboard::LiveDashboard(const std::vector<std::shared_ptr<Server>>& servers
 
 static std::string makeBar(double fraction, int width) {
     fraction = std::max(0.0, std::min(1.0, fraction));
-    int filled = static_cast<int>(fraction * width);
+    const int filled = static_cast<int>(fraction * width);
+    const int empty = std::max(0, width - filled);
     std::string s = "[";
-    s += std::string(filled, '#');
-    s += std::string(width - filled, '.');
+    s += std::string(static_cast<std::size_t>(filled), '#');
+    s += std::string(static_cast<std::size_t>(empty), '.');
     s += "]";
     return s;
 }
@@ -85,7 +87,11 @@ void LiveDashboard::renderFrame(bool final) {
     }
 
     long maxDone = 1;
-    for (const auto& s : servers_) maxDone = std::max(maxDone, s->getTotalProcessed());
+    if (!servers_.empty()) {
+        for (const auto& s : servers_) {
+            maxDone = std::max(maxDone, s->getTotalProcessed());
+        }
+    }
 
     for (const auto& s : servers_) {
         long done = s->getTotalProcessed();
